@@ -96,10 +96,10 @@ int main()
 	memset(route_table,0,sizeof(struct route));
 	route_table_size = 0;
 
-	char* ifname_enp0s3 = "enp0s3";
+	char* ifname_enp0s8 = "enp0s8";
 	//调用添加函数insert_route往路由表里添加直连路由
-	insert_route(0xc0a80500, 24, ifname_enp0s3, if_nametoindex(ifname_enp0s3), 0xc0a80301);
-	insert_route(0xc0a80200, 24, ifname_enp0s3, if_nametoindex(ifname_enp0s3), 0xc0a80301);
+	insert_route(0xc0a80500, 24, ifname_enp0s8, if_nametoindex(ifname_enp0s8), 0xc0a80301);
+	insert_route(0xc0a80200, 24, ifname_enp0s8, if_nametoindex(ifname_enp0s8), 0xc0a80301);
 	struct in_addr del_addr;
 	del_addr.s_addr = 0xc0a80200;
 	delete_route(del_addr, 24);
@@ -173,7 +173,7 @@ int main()
 					outmac->mac = (char *)malloc(6*sizeof(char));
 					strncpy(outifr.ifr_name, out_if_name, IFNAMSIZ);
 					if(ioctl(arpfd, SIOCGIFHWADDR, &outifr) == 0) {
-						printf("zero!\n");
+						printf("get out mac!\n");
 						int k;
 						for(k = 0; k < 6; k++) {
 							outmac->mac[k] = outifr.ifr_hwaddr.sa_data[k];
@@ -190,7 +190,15 @@ int main()
 
 
 					//调用arpGet获取下一跳的mac地址
+					srcmac->mac = malloc(7);
+					arpGet(srcmac, nexthopinfo->ifname, inet_ntoa(nexthopinfo->ipv4addr));
 
+					/*srcmac->mac[0] = 0x08;
+					srcmac->mac[1] = 0x00;
+					srcmac->mac[2] = 0x27;
+					srcmac->mac[3] = 0xb2;
+					srcmac->mac[4] = 0xa2;
+					srcmac->mac[5] = 0xb3;*/
 
 					//send ether icmp
 					{
@@ -198,8 +206,25 @@ int main()
 					//将获取到的下一跳接口信息存储到存储接口信息的结构体ifreq里，通过ioctl获取出接口的mac地址作为数据包的源mac地址
 					//封装数据包：
 					//<1>.根据获取到的信息填充以太网数据包头，以太网包头主要需要源mac地址、目的mac地址、以太网类型eth_header->ether_type = htons(ETHERTYPE_IP);
+						int i;
+						for(i = 0; i < 6; i++) {
+							skbuf[i] = srcmac->mac[i];
+						}
+						for(i = 6; i < 12; i++) {
+							skbuf[i] = outmac->mac[i-6];
+						}
 					//<2>.再填充ip数据包头，对其进行校验处理；
 					//<3>.然后再填充接收到的ip数据包剩余数据部分，然后通过raw socket发送出去
+						struct sockaddr_ll addr;
+						memset(&addr, 0, sizeof(addr));
+						addr.sll_family = AF_INET;
+						strncpy(addr.sll_addr, srcmac->mac, 6);
+						addr.sll_halen = 6;
+						addr.sll_protocol = htons(ETH_P_IP);
+						addr.sll_pkttype = PACKET_OUTGOING;
+						addr.sll_ifindex = if_nametoindex(ifname_enp0s8);
+						int retsend = sendto(sendfd, skbuf, sizeof(skbuf), 0, (struct sockaddr *)&addr, sizeof(addr));
+						printf("return value is %d\n", retsend);
 					}
 			}
 
