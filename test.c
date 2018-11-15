@@ -1,18 +1,16 @@
-#include "arpfind.h"
-
-int arpGet(struct arpmac *srcmac, char *ifname, char *ipStr)
+int arpGet(char *ifname, char *ipStr)
 {
 	if(ifname == NULL || ipStr == NULL)
 	{
 		printf("para is null.\n");
 		return -1;
 	}
-    printf("\n");
+
 	struct arpreq req;
 	struct sockaddr_in *sin;
 	int ret = 0;
 	int sock_fd = 0;
-	printf("ipstr %s\n", ipStr);
+
 	memset(&req, 0, sizeof(struct arpreq));
 
 	sin = (struct sockaddr_in *)&req.arp_pa;
@@ -36,8 +34,9 @@ int arpGet(struct arpmac *srcmac, char *ifname, char *ipStr)
 		return -1;
 	}
 
-	srcmac->mac = (unsigned char *)req.arp_ha.sa_data;
-	srcmac->index = if_nametoindex(ifname);
-    close(sock_fd);
+	unsigned char *hw = (unsigned char *)req.arp_ha.sa_data;
+	printf("%#x-%#x-%#x-%#x-%#x-%#x\n", hw[0], hw[1], hw[2], hw[3], hw[4], hw[5]);
+	printf("%#x\n", req.arp_flags);
+	close(sock_fd);
 	return 0;
 }
