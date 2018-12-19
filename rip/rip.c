@@ -225,6 +225,35 @@ void ripdaemon_Start()
 void routentry_Insert()
 {
 	//将本地接口表添加到rip路由表里
+    printf("%s\n","Add interfaces into Rip Route Table");
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    TRtEntry *j = g_pstRouteEntry;
+    for(int i = 0; i < interCount;i ++, j=j->pstNext)
+    {
+        j->stIpPrefix.s_addr = pcLocalAddr[i].s_addr & pcLocalMask->s_addr;
+        j->stNexthop.s_addr = inet_addr("0.0.0.0");
+        j->uiPrefixLen = pcLocalMask[i];
+        j->uiMetric = htonl(1);
+        j->pstNext = NULL;
+        j->lastUpdataTime = tv.tv_sec;
+        j->isValid = ROUTE_VALID;
+        route_SendForward(AddRoute,j);
+
+        printf("    %d ipPrefix=%16s ",i, inet_ntoa(j->stIpPrefix));
+        printf("nextHop=%16s", inet_ntoa(j->stNexthop));
+        printf(" prefixLen=%16s metric=%2d\n", inet_ntoa(j->uiPrefixLen), htonl(j->uiMetric));
+
+        if(i < interCount - 1)
+        {
+            j->pstNext = (TRtEntry *) malloc(sizeof(TRtEntry));
+            if(j->pstNext == NULL)
+            {
+                perror("g_pstRouteEntry malloc error !\n");
+                exit(-1);
+            }
+        }
+    }
 	return ;
 }
 
