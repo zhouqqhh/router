@@ -8,7 +8,7 @@ int static_route_get(struct selfroute *selfrt, int recvfd)
 	addr = accept(recvfd, (struct sockaddr*)&src_addr, (socklen_t *)&addr_len);
 	char a;
 	ssize_t ret = read(addr, selfrt, sizeof(struct selfroute));
-	printf("return value is %d\n", (int)ret);
+	// printf("route get return value is %d\n", (int)ret);
 	if(ret >= 0) {
 		return 1;
 	}

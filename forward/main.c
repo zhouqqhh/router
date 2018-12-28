@@ -22,10 +22,10 @@ void *thr_fn(void *arg)
 	memset(selfrt,0,sizeof(struct selfroute));
 
 	//get if.name
-	struct if_nameindex *head, *ifni;
-	ifni = if_nameindex();
-  	head = ifni;
-	char *ifname;
+	// struct if_nameindex *head, *ifni;
+	// ifni = if_nameindex();
+  	// head = ifni;
+	char *ifname = (char*)malloc(20);
 
 	int recvfd;
 	if ((recvfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
@@ -51,15 +51,17 @@ void *thr_fn(void *arg)
 			printf("get\n");
 			if(selfrt->cmdnum == 24)
 			{
-				while(ifni->if_index != 0) {
-					if(ifni->if_index==selfrt->ifindex)
-					{
-						printf("if_name is %s\n",ifni->if_name);
-							ifname= ifni->if_name;
-						break;
-					}
-					ifni++;
-				}
+				if_indextoname(selfrt->ifindex, ifname);
+				printf("ifindex %d", selfrt->ifindex);
+				// while(ifni->if_index != 0) {
+				// 	if(ifni->if_index==selfrt->ifindex)
+				// 	{
+				// 		printf("if_name is %s\n",ifni->if_name);
+				// 			ifname= ifni->if_name;
+				// 		break;
+				// 	}
+				// 	ifni++;
+				// }
 				insert_route((unsigned long)selfrt->prefix.s_addr, (unsigned int)selfrt->prefixlen,
 				ifname, selfrt->ifindex, (unsigned long)selfrt->nexthop.s_addr);
 				//插入到路由表里
@@ -133,7 +135,8 @@ int main()
 			//192.168.1.10是测试服务器的IP，现在测试服务器IP是192.168.1.10到192.168.1.80.
 			//使用不同的测试服务器要进行修改对应的IP。然后再编译。
 			//192.168.6.2是测试时候ping的目的地址。与静态路由相对应。
- 			if(ip_recvpkt->ip_src.s_addr == inet_addr("192.168.1.1") && ip_recvpkt->ip_dst.s_addr == inet_addr("192.168.6.2"))
+ 			if((ip_recvpkt->ip_src.s_addr == inet_addr("172.16.36.1") && ip_recvpkt->ip_dst.s_addr == inet_addr("192.168.3.1"))||
+		(ip_recvpkt->ip_src.s_addr == inet_addr("192.168.3.1") && ip_recvpkt->ip_dst.s_addr == inet_addr("172.16.36.1")))
 			{
 				//分析打印ip数据包的源和目的ip地址
 				//analyseIP(ip_recvpkt);
@@ -195,6 +198,10 @@ int main()
 						memset(srcmac,0,sizeof(struct arpmac));
 						//调用arpGet获取下一跳的mac地址
 						srcmac->mac = malloc(7);
+						//if nexthop is 0.0.0.0, use dst address in packet
+						if (nexthopinfo->ipv4addr.s_addr == 0) {
+							nexthopinfo->ipv4addr.s_addr = ntohl(dstIP);
+						}
 						arpGet(srcmac, nexthopinfo->ifname, inet_ntoa(nexthopinfo->ipv4addr));
 
 						//send ether icmp
@@ -233,7 +240,7 @@ int main()
 						} else {
 							printf("check sum error\n");
 						}
-						printf("return value is %d\n", retsend);
+						printf("packet send return value is %d\n", retsend);
 					}
 				}
 			}

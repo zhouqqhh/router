@@ -20,7 +20,10 @@ int insert_route(unsigned long  ip4prefix,unsigned int prefixlen,char *ifname,un
 	struct route *new_route = (struct route*)malloc(sizeof(struct route*));
 	new_route->next = NULL;
 	new_route->ip4prefix.s_addr = (in_addr_t)ip4prefix;
-	printf("insert prefix %x\n", new_route->ip4prefix.s_addr);
+	struct in_addr *tmpPrefix = (struct in_addr*)malloc(sizeof(struct in_addr));
+	tmpPrefix->s_addr = ntohl(ip4prefix);
+	printf("insert ifname %s\n", ifname);
+	printf("insert prefix %s\n", inet_ntoa(*tmpPrefix));
 	new_route->prefixlen = prefixlen;
 	new_route->nexthop = new_op;
 	if(route_table_size == 0) {
@@ -64,6 +67,7 @@ int lookup_route(struct in_addr dstaddr,struct nextaddr *nexthopinfo)
 
 int delete_route(struct in_addr dstaddr,unsigned int prefixlen)
 {
+	printf("delete prefix %s\n", inet_ntoa(dstaddr));
 	unsigned int xor, mask;
 	dstaddr.s_addr = htonl(dstaddr.s_addr);
 	struct route* r = route_table, *rpre = NULL;

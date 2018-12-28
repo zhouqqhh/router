@@ -29,7 +29,7 @@ int arpGet(char *ifname, char *ipStr)
 	ret = ioctl(sock_fd, SIOCGARP, &req);
 	if(ret < 0)
 	{
-		printf("ioctl error.\n");
+		printf("test ioctl error.\n");
 		close(sock_fd);
 		return -1;
 	}

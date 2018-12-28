@@ -12,7 +12,7 @@ int arpGet(struct arpmac *srcmac, char *ifname, char *ipStr)
 	struct sockaddr_in *sin;
 	int ret = 0;
 	int sock_fd = 0;
-	printf("ipstr %s\n", ipStr);
+	printf("ipstr %s, ifname %s\n", ipStr, ifname);
 	memset(&req, 0, sizeof(struct arpreq));
 
 	sin = (struct sockaddr_in *)&req.arp_pa;
@@ -31,7 +31,7 @@ int arpGet(struct arpmac *srcmac, char *ifname, char *ipStr)
 	ret = ioctl(sock_fd, SIOCGARP, &req);
 	if(ret < 0)
 	{
-		printf("ioctl error.\n");
+		printf("find ioctl error.\n");
 		close(sock_fd);
 		return -1;
 	}
